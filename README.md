@@ -59,36 +59,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `npm run test:watch` - Run tests in watch mode
 - `npm run lint` - Run ESLint
 
-## Project Structure
-
-```
-mampu-test-fe/
-├── src/
-│   ├── app/
-│   │   ├── users/
-│   │   │   ├── [id]/
-│   │   │   │   ├── __tests__/
-│   │   │   │   │   └── page.test.tsx
-│   │   │   │   └── page.tsx
-│   │   │   ├── __tests__/
-│   │   │   │   └── page.test.tsx
-│   │   │   └── page.tsx
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── globals.css
-│   ├── components/
-│   │   └── QueryProvider.tsx
-│   └── types/
-│       └── user.ts
-├── public/
-├── jest.config.js
-├── jest.setup.js
-├── next.config.ts
-├── tsconfig.json
-└── package.json
-```
-
-
 ## Running Tests
 
 Run all tests:
