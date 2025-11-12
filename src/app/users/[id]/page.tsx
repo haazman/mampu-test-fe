@@ -1,51 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { User } from '@/types/user';
 import Link from 'next/link';
 import { use } from 'react';
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  
-  try {
-    const response = await fetch(
-      `https://jsonplaceholder.typicode.com/users/${id}`,
-      { next: { revalidate: 60 } }
-    );
-    
-    if (!response.ok) {
-      return { title: 'User Not Found' };
-    }
-    
-    const user = await response.json();
-    
-    return {
-      title: `${user.name} - User Details`,
-      description: `View details for ${user.name} (@${user.username}). Email: ${user.email}, Company: ${user.company.name}`,
-      openGraph: {
-        title: `${user.name} - User Details`,
-        description: `${user.company.catchPhrase}`,
-      },
-    };
-  } catch {
-    return { title: 'User Details' };
-  }
-}
-
-async function fetchUser(id: string): Promise<User> {
-  const response = await fetch(
-    `https://jsonplaceholder.typicode.com/users/${id}`
-  );
-  if (!response.ok) {
-    throw new Error('Failed to fetch user');
-  }
-  return response.json();
-}
+import { useUser } from '@/hooks/useUsers';
 
 function DetailSkeleton() {
   return (
@@ -125,15 +82,11 @@ export default function UserDetailPage({
 }) {
   const { id } = use(params);
 
-  const { data: user, isLoading, error, refetch } = useQuery({
-    queryKey: ['user', id],
-    queryFn: () => fetchUser(id),
-  });
+  const { data: user, isLoading, error, refetch } = useUser(id);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
         <div className="mb-6">
           <Link
             href="/users"
@@ -165,7 +118,7 @@ export default function UserDetailPage({
           />
         ) : user ? (
           <>
-            {/* Header */}
+
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {user.name}
@@ -173,23 +126,21 @@ export default function UserDetailPage({
               <p className="text-gray-600">@{user.username}</p>
             </div>
 
-            {/* User Details Grid */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Contact Information */}
+
               <InfoCard title="Contact Information">
                 <InfoRow label="Email" value={user.email} />
                 <InfoRow label="Phone" value={user.phone} />
                 <InfoRow label="Website" value={user.website} />
               </InfoCard>
 
-              {/* Company Information */}
               <InfoCard title="Company">
                 <InfoRow label="Name" value={user.company.name} />
                 <InfoRow label="Catchphrase" value={user.company.catchPhrase} />
                 <InfoRow label="Business" value={user.company.bs} />
               </InfoCard>
 
-              {/* Address */}
               <InfoCard title="Address">
                 <InfoRow
                   label="Street"
@@ -203,7 +154,6 @@ export default function UserDetailPage({
                 />
               </InfoCard>
 
-              {/* Quick Actions */}
               <InfoCard title="Quick Actions">
                 <div className="space-y-3">
                   <a

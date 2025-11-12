@@ -3,8 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UsersPage from '@/app/users/page';
 
-// Mock fetch
-global.fetch = jest.fn();
+
+jest.mock('@/services/userService', () => ({
+  userService: {
+    getUsers: jest.fn(),
+  },
+}));
+
+import { userService } from '@/services/userService';
 
 const mockUsers = [
   {
@@ -68,21 +74,18 @@ describe('UsersPage', () => {
   });
 
   it('renders loading state initially', () => {
-    (global.fetch as jest.Mock).mockImplementation(
+    (userService.getUsers as jest.Mock).mockImplementation(
       () => new Promise(() => {}) // Never resolves
     );
 
     render(<UsersPage />, { wrapper: createWrapper() });
 
-    // Should show skeleton loader
-    expect(screen.getByText(/Users/i)).toBeInTheDocument();
+    // Should show heading
+    expect(screen.getAllByText(/Users/i)[0]).toBeInTheDocument();
   });
 
   it('renders user rows after loading', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUsers,
-    });
+    (userService.getUsers as jest.Mock).mockResolvedValueOnce(mockUsers);
 
     render(<UsersPage />, { wrapper: createWrapper() });
 
@@ -96,10 +99,7 @@ describe('UsersPage', () => {
   });
 
   it('filters users by search term', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUsers,
-    });
+    (userService.getUsers as jest.Mock).mockResolvedValueOnce(mockUsers);
 
     const user = userEvent.setup();
     render(<UsersPage />, { wrapper: createWrapper() });
@@ -118,10 +118,7 @@ describe('UsersPage', () => {
   });
 
   it('shows empty state when no users match search', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUsers,
-    });
+    (userService.getUsers as jest.Mock).mockResolvedValueOnce(mockUsers);
 
     const user = userEvent.setup();
     render(<UsersPage />, { wrapper: createWrapper() });
@@ -139,10 +136,7 @@ describe('UsersPage', () => {
   });
 
   it('sorts users by name', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUsers,
-    });
+    (userService.getUsers as jest.Mock).mockResolvedValueOnce(mockUsers);
 
     const user = userEvent.setup();
     render(<UsersPage />, { wrapper: createWrapper() });
@@ -152,7 +146,7 @@ describe('UsersPage', () => {
     });
 
     const rows = screen.getAllByRole('row');
-    // First data row should be Jane (comes after header row)
+
     expect(rows[1]).toHaveTextContent('Jane Smith');
 
     const sortButton = screen.getByRole('button', { name: /Sort by name/i });
@@ -160,13 +154,12 @@ describe('UsersPage', () => {
 
     await waitFor(() => {
       const updatedRows = screen.getAllByRole('row');
-      // After sorting desc, John should be first
       expect(updatedRows[1]).toHaveTextContent('John Doe');
     });
   });
 
   it('shows error state when fetch fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(
+    (userService.getUsers as jest.Mock).mockRejectedValueOnce(
       new Error('Failed to fetch users')
     );
 
@@ -179,12 +172,9 @@ describe('UsersPage', () => {
   });
 
   it('retries fetch when retry button is clicked', async () => {
-    (global.fetch as jest.Mock)
+    (userService.getUsers as jest.Mock)
       .mockRejectedValueOnce(new Error('Failed to fetch users'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockUsers,
-      });
+      .mockResolvedValueOnce(mockUsers);
 
     const user = userEvent.setup();
     render(<UsersPage />, { wrapper: createWrapper() });
@@ -202,10 +192,7 @@ describe('UsersPage', () => {
   });
 
   it('displays result count', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUsers,
-    });
+    (userService.getUsers as jest.Mock).mockResolvedValueOnce(mockUsers);
 
     render(<UsersPage />, { wrapper: createWrapper() });
 

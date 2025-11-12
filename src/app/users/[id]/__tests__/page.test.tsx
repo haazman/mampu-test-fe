@@ -3,8 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UserDetailPage from '@/app/users/[id]/page';
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock the userService
+jest.mock('@/services/userService', () => ({
+  userService: {
+    getUserById: jest.fn(),
+  },
+}));
+
+import { userService } from '@/services/userService';
 
 const mockUser = {
   id: 1,
@@ -40,38 +46,51 @@ function createWrapper() {
   );
 }
 
-// Mock next/link
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  use: jest.fn((promise: Promise<any>) => {
+    let result: any;
+    promise.then((value) => {
+      result = value;
+    });
+    if (promise === mockParams) {
+      return { id: '1' };
+    }
+    return result;
+  }),
+}));
+
 jest.mock('next/link', () => {
   return ({ children, href }: { children: React.ReactNode; href: string }) => {
     return <a href={href}>{children}</a>;
   };
 });
 
+const mockParams = Promise.resolve({ id: '1' });
+
 describe('UserDetailPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders loading state initially', () => {
-    (global.fetch as jest.Mock).mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+  it('renders loading state initially', async () => {
+    (userService.getUserById as jest.Mock).mockImplementation(
+      () => new Promise(() => {})
     );
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
-    // The page should render without crashing during loading
-    expect(screen.getByText(/Back to list/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Back to list/i)).toBeInTheDocument();
+    });
   });
 
   it('renders user details after loading', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    });
+    (userService.getUserById as jest.Mock).mockResolvedValueOnce(mockUser);
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
@@ -90,11 +109,11 @@ describe('UserDetailPage', () => {
   });
 
   it('shows error state when fetch fails', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(
+    (userService.getUserById as jest.Mock).mockRejectedValueOnce(
       new Error('Failed to fetch user')
     );
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
@@ -107,15 +126,12 @@ describe('UserDetailPage', () => {
   });
 
   it('retries fetch when retry button is clicked', async () => {
-    (global.fetch as jest.Mock)
+    (userService.getUserById as jest.Mock)
       .mockRejectedValueOnce(new Error('Failed to fetch user'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockUser,
-      });
+      .mockResolvedValueOnce(mockUser);
 
     const user = userEvent.setup();
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
@@ -134,12 +150,9 @@ describe('UserDetailPage', () => {
   });
 
   it('displays all user information sections', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    });
+    (userService.getUserById as jest.Mock).mockResolvedValueOnce(mockUser);
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
@@ -147,7 +160,6 @@ describe('UserDetailPage', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    // Check section headers
     expect(screen.getByText(/CONTACT INFORMATION/i)).toBeInTheDocument();
     expect(screen.getByText(/COMPANY/i)).toBeInTheDocument();
     expect(screen.getByText(/ADDRESS/i)).toBeInTheDocument();
@@ -155,12 +167,9 @@ describe('UserDetailPage', () => {
   });
 
   it('has working back to list link', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    });
+    (userService.getUserById as jest.Mock).mockResolvedValueOnce(mockUser);
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 
@@ -169,12 +178,9 @@ describe('UserDetailPage', () => {
   });
 
   it('has action buttons with correct links', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    });
+    (userService.getUserById as jest.Mock).mockResolvedValueOnce(mockUser);
 
-    render(<UserDetailPage params={Promise.resolve({ id: '1' })} />, {
+    render(<UserDetailPage params={mockParams} />, {
       wrapper: createWrapper(),
     });
 

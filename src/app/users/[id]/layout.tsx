@@ -1,12 +1,18 @@
 import { Metadata } from 'next';
+import { ReactNode } from 'react';
 
 async function fetchUser(id: string) {
-  const response = await fetch(
-    `https://jsonplaceholder.typicode.com/users/${id}`,
-    { next: { revalidate: 60 } } // ISR: cache for 60 seconds
-  );
-  if (!response.ok) return null;
-  return response.json();
+  try {
+    const response = await fetch(
+      `https://jsonplaceholder.typicode.com/users/${id}`,
+      { next: { revalidate: 60 } }
+    );
+    
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({
@@ -31,4 +37,8 @@ export async function generateMetadata({
       description: `${user.company.catchPhrase}`,
     },
   };
+}
+
+export default function UserLayout({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }

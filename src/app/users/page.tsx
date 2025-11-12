@@ -1,17 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { User } from '@/types/user';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-
-async function fetchUsers(): Promise<User[]> {
-  const response = await fetch('https://jsonplaceholder.typicode.com/users');
-  if (!response.ok) {
-    throw new Error('Failed to fetch users');
-  }
-  return response.json();
-}
+import { useUsers } from '@/hooks/useUsers';
 
 function TableSkeleton() {
   return (
@@ -89,10 +80,7 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const { data: users, isLoading, error, refetch } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
+  const { data: users, isLoading, error, refetch } = useUsers();
 
   const filteredAndSortedUsers = useMemo(() => {
     if (!users) return [];
@@ -116,7 +104,6 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Users</h1>
           <p className="text-gray-600">
@@ -124,7 +111,6 @@ export default function UsersPage() {
           </p>
         </div>
 
-        {/* Search and Sort Controls */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -184,7 +170,6 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {isLoading ? (
             <TableSkeleton />
@@ -256,7 +241,6 @@ export default function UsersPage() {
           )}
         </div>
 
-        {/* Results count */}
         {!isLoading && !error && users && (
           <div className="mt-4 text-sm text-gray-600">
             Showing {filteredAndSortedUsers.length} of {users.length} users
